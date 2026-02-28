@@ -4,11 +4,13 @@
   "description": "Single place to multicast posts to social networks",
   "type": "module",
   "scripts": {
-    "post": "tsx scripts/post.ts"
+    "post": "tsx scripts/post.ts",
+    "reddit-login": "tsx scripts/reddit-login.ts"
   },
   "dependencies": {
     "@humanwhocodes/crosspost": "^1.0.3",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "playwright": "^1.49.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

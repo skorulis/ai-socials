@@ -36,6 +36,7 @@ import {
 } from "@humanwhocodes/crosspost";
 import type { Strategy } from "@humanwhocodes/crosspost";
 import { createRedditStrategy } from "./reddit-strategy.js";
+import { createRedditBrowserStrategy } from "./reddit-browser-strategy.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
@@ -212,11 +213,17 @@ function buildStrategies(platformFilter: PlatformId[] | null): Strategy[] {
   });
 
   add("reddit", () => {
+    const subreddit = env("REDDIT_SUBREDDIT");
+    const browserAuthPath = env("REDDIT_BROWSER_AUTH_PATH");
+    // Browser (form submit): no API tokens; run `npm run reddit-login` once to save session
+    if (subreddit && browserAuthPath) {
+      const storageStatePath = resolve(projectRoot, browserAuthPath);
+      return createRedditBrowserStrategy({ subreddit, storageStatePath });
+    }
     const clientId = env("REDDIT_CLIENT_ID");
     const clientSecret = env("REDDIT_CLIENT_SECRET");
     const username = env("REDDIT_USERNAME");
     const password = env("REDDIT_PASSWORD");
-    const subreddit = env("REDDIT_SUBREDDIT");
     const userAgent = env("REDDIT_USER_AGENT");
     if (!clientId || !clientSecret || !username || !password || !subreddit || !userAgent) return null;
     return createRedditStrategy({

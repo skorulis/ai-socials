@@ -58,7 +58,13 @@ async function getAccessToken(options: RedditStrategyOptions, signal?: AbortSign
     }
     throw new Error(errMsg);
   }
-  const data = (await res.json()) as { access_token?: string };
+  const data = (await res.json()) as {
+    access_token?: string;
+    error?: string;
+    message?: string;
+  };
+  if (data.error)
+    throw new Error(data.message ? `Reddit: ${data.error} - ${data.message}` : `Reddit: ${data.error}`);
   if (!data.access_token) throw new Error("Reddit token response missing access_token");
   return data.access_token;
 }
