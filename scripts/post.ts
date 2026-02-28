@@ -15,6 +15,7 @@
  *   --devto           Post only to Dev.to
  *   --slack, -s       Post only to Slack
  *   --nostr, -n       Post only to Nostr
+ *   --reddit, -r      Post only to Reddit
  */
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -34,6 +35,7 @@ import {
   NostrStrategy,
 } from "@humanwhocodes/crosspost";
 import type { Strategy } from "@humanwhocodes/crosspost";
+import { createRedditStrategy } from "./reddit-strategy.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
@@ -51,7 +53,8 @@ type PlatformId =
   | "telegram"
   | "devto"
   | "slack"
-  | "nostr";
+  | "nostr"
+  | "reddit";
 
 function parseArgs(argv: string[]): {
   message: string | null;
@@ -84,6 +87,8 @@ function parseArgs(argv: string[]): {
     "-s": "slack",
     "--nostr": "nostr",
     "-n": "nostr",
+    "--reddit": "reddit",
+    "-r": "reddit",
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -204,6 +209,24 @@ function buildStrategies(platformFilter: PlatformId[] | null): Strategy[] {
     if (!privateKey || !relaysStr) return null;
     const relays = relaysStr.split(",").map((r) => r.trim());
     return new NostrStrategy({ privateKey, relays });
+  });
+
+  add("reddit", () => {
+    const clientId = env("REDDIT_CLIENT_ID");
+    const clientSecret = env("REDDIT_CLIENT_SECRET");
+    const username = env("REDDIT_USERNAME");
+    const password = env("REDDIT_PASSWORD");
+    const subreddit = env("REDDIT_SUBREDDIT");
+    const userAgent = env("REDDIT_USER_AGENT");
+    if (!clientId || !clientSecret || !username || !password || !subreddit || !userAgent) return null;
+    return createRedditStrategy({
+      clientId,
+      clientSecret,
+      username,
+      password,
+      subreddit,
+      userAgent,
+    });
   });
 
   return strategies;

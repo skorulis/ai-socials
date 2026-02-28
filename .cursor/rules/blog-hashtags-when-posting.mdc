@@ -1,0 +1,56 @@
+---
+description: When posting a link from ai.skorulis.com blog, add the post's tags as hashtags to the social message
+alwaysApply: true
+---
+
+# Posting blog links with hashtags from post tags
+
+When the user asks to post or share a link to a post from **ai.skorulis.com** (or "my blog"), do the following so the social message includes that post's tags as hashtags (for networks that support them).
+
+## 1. Resolve the blog post
+
+- **From URL**: If they give a URL like `https://ai.skorulis.com/posts/your-slug/`, the slug is `your-slug`.
+- **From slug or title**: Use the slug they say, or find the matching file under the blog source.
+
+**Blog source path**: `/Users/alex/dev/html/ai.skorulis.com`  
+**Post files**: `src/data/blog/{slug}.md` (slug = filename without `.md`).
+
+## 2. Read tags from frontmatter
+
+Open the post file and parse the YAML frontmatter (between the first `---` and the next `---`). Read the `tags` array, e.g.:
+
+```yaml
+tags:
+  - meta
+  - career
+  - learning-path
+```
+
+## 3. Format as hashtags
+
+Convert each tag to a hashtag: prefix with `#`, no spaces. Keep the tag value as-is (lowercase, hyphens OK).
+
+- `meta` → `#meta`
+- `career` → `#career`
+- `learning-path` → `#learning-path`
+
+Append these at the end of the social message, separated by spaces (e.g. `… https://ai.skorulis.com/posts/slug/ #meta #career #learning-path`).
+
+## 4. Post
+
+Run the project post script with the composed message (and any platform flags the user asked for):
+
+```bash
+npm run post -- "Your message and link … #tag1 #tag2"
+```
+
+Use the canonical post URL: `https://ai.skorulis.com/posts/{slug}/`
+
+## Example
+
+User: "Post my latest blog post to Twitter and Bluesky"
+
+1. List or infer the latest post in `src/data/blog/` (e.g. by `pubDatetime` in frontmatter), get its slug.
+2. Read that file’s `tags`.
+3. Compose message: e.g. "Title – https://ai.skorulis.com/posts/slug/ #meta #career #learning-path".
+4. Run: `npm run post -- --twitter --bluesky "Title – https://ai.skorulis.com/posts/slug/ #meta #career #learning-path"`

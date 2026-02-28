@@ -44,7 +44,7 @@ With an image:
 npm run post -- --image ./photo.jpg --image-alt "Description" "Your message"
 ```
 
-Platform flags: `--twitter` / `-t`, `--mastodon` / `-m`, `--bluesky` / `-b`, `--linkedin` / `-l`, `--discord` / `-d`, `--discord-webhook`, `--telegram`, `--devto`, `--slack` / `-s`, `--nostr` / `-n`.
+Platform flags: `--twitter` / `-t`, `--mastodon` / `-m`, `--bluesky` / `-b`, `--linkedin` / `-l`, `--discord` / `-d`, `--discord-webhook`, `--telegram`, `--devto`, `--slack` / `-s`, `--nostr` / `-n`, `--reddit` / `-r`.
 
 ## Agent usage (Cursor)
 
