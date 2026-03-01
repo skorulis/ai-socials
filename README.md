@@ -46,11 +46,11 @@ npm run post -- --image ./photo.jpg --image-alt "Description" "Your message"
 
 Platform flags: `--twitter` / `-t`, `--mastodon` / `-m`, `--bluesky` / `-b`, `--linkedin` / `-l`, `--discord` / `-d`, `--discord-webhook`, `--telegram`, `--devto`, `--slack` / `-s`, `--nostr` / `-n`, `--reddit` / `-r`.
 
-### Reddit (browser, no API tokens)
+### Reddit (browser)
 
-If Reddit’s API is unavailable, you can post via the web form using a saved browser session:
+Reddit posting uses the web form and a saved browser session (no API tokens):
 
-1. Set in `.env`: `REDDIT_SUBREDDIT=your_subreddit` and `REDDIT_BROWSER_AUTH_PATH=.reddit-browser-state`.
+1. Set in `.env`: `REDDIT_SUBREDDIT=your_subreddit` and optionally `REDDIT_BROWSER_AUTH_PATH=.reddit-browser-state` (default).
 2. Run once: `npm run reddit-login` — a browser opens; log in to Reddit, then press Enter in the terminal to save the session.
 3. Post as usual: `npm run post -- --reddit "Title\n\nhttps://example.com"`. Link posts (message contains a URL) and text posts are supported.
 
