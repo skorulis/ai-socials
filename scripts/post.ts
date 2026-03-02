@@ -25,7 +25,6 @@ import {
   Client,
   TwitterStrategy,
   MastodonStrategy,
-  BlueskyStrategy,
   LinkedInStrategy,
   DiscordStrategy,
   DiscordWebhookStrategy,
@@ -36,6 +35,7 @@ import {
 } from "@humanwhocodes/crosspost";
 import type { Strategy } from "@humanwhocodes/crosspost";
 import { createRedditBrowserStrategy } from "./reddit-browser-strategy.js";
+import { postToBluesky } from "./bluesky.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
@@ -128,6 +128,7 @@ function buildStrategies(platformFilter: PlatformId[] | null): Strategy[] {
   const strategies: Strategy[] = [];
 
   const add = (id: PlatformId, build: () => Strategy | null) => {
+    if (id === "bluesky") return;
     if (platformFilter !== null && !platformFilter.includes(id)) return;
     const s = build();
     if (s) strategies.push(s);
@@ -152,14 +153,6 @@ function buildStrategies(platformFilter: PlatformId[] | null): Strategy[] {
     const host = env("MASTODON_HOST");
     if (!token || !host) return null;
     return new MastodonStrategy({ accessToken: token, host });
-  });
-
-  add("bluesky", () => {
-    const identifier = env("BLUESKY_IDENTIFIER");
-    const password = env("BLUESKY_PASSWORD");
-    const host = env("BLUESKY_HOST") ?? "bsky.social";
-    if (!identifier || !password) return null;
-    return new BlueskyStrategy({ identifier, password, host });
   });
 
   add("linkedin", () => {
@@ -233,15 +226,14 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const strategies = buildStrategies(platforms);
+  const selected = platforms;
+  const shouldPostToBluesky =
+    (selected === null || selected.includes("bluesky")) ?? false;
 
-  if (strategies.length === 0) {
-    const hint = platforms
-      ? "Check that the required env vars for the selected platforms are set in .env"
-      : "Set env vars in .env for at least one platform (see .env.example).";
-    console.error("No platforms configured. " + hint);
-    process.exit(1);
-  }
+  const nonBlueskyPlatforms =
+    selected === null ? null : selected.filter((p) => p !== "bluesky");
+
+  const strategies = buildStrategies(nonBlueskyPlatforms);
 
   const postOptions: { images?: [{ data: Uint8Array; alt: string }] } = {};
   if (image) {
@@ -256,10 +248,29 @@ async function main(): Promise<void> {
     }
   }
 
-  const client = new Client({ strategies });
-  const responses = await client.post(message, postOptions);
+  const client = strategies.length > 0 ? new Client({ strategies }) : null;
+
+  const crosspostPromise = client
+    ? client.post(message, postOptions)
+    : Promise.resolve([]);
+
+  const blueskyPromise = shouldPostToBluesky
+    ? postToBluesky({
+        text: message,
+        imagePath: image,
+        imageAlt,
+      })
+    : Promise.resolve<ReturnType<typeof postToBluesky> extends Promise<infer R> ? R : never>(
+        { ok: false, error: null } as never,
+      );
+
+  const [responses, blueskyResult] = await Promise.all([
+    crosspostPromise,
+    blueskyPromise,
+  ]);
 
   let exitCode = 0;
+
   responses.forEach((response, index) => {
     const strategy = strategies[index];
     if (response.ok) {
@@ -275,6 +286,32 @@ async function main(): Promise<void> {
       console.log("");
     }
   });
+
+  if (shouldPostToBluesky) {
+    if (blueskyResult.ok) {
+      console.log("✅ Bluesky succeeded.");
+      if (blueskyResult.url) {
+        console.log(blueskyResult.url);
+      }
+      console.log("");
+    } else {
+      exitCode = 1;
+      console.log("❌ Bluesky failed.");
+      const reason = (blueskyResult as { error?: unknown }).error;
+      console.error(
+        reason instanceof Error ? reason.message : reason ?? "Unknown error",
+      );
+      console.log("");
+    }
+  }
+
+  if (!shouldPostToBluesky && strategies.length === 0) {
+    const hint = platforms
+      ? "Check that the required env vars for the selected platforms are set in .env"
+      : "Set env vars in .env for at least one platform (see .env.example).";
+    console.error("No platforms configured. " + hint);
+    process.exit(1);
+  }
 
   process.exit(exitCode);
 }
