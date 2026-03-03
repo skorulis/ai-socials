@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { BskyAgent } from "@atproto/api";
+import { BskyAgent, RichText } from "@atproto/api";
 
 type BlueskyPostResult =
   | { ok: true; url?: string }
@@ -97,8 +97,13 @@ export async function postToBluesky(
 
     const createdAt = new Date().toISOString();
 
+    // Use RichText so URLs, mentions, and hashtags become proper facets.
+    const richText = new RichText({ text: options.text });
+    await richText.detectFacets(agent);
+
     const postRes = await agent.post({
-      text: options.text,
+      text: richText.text,
+      facets: richText.facets,
       createdAt,
       ...(embed ? { embed } : {}),
     });
